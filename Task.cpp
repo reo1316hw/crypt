@@ -36,7 +36,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-
     while (!file1.eof())
     {
         file1 >> str2;
@@ -47,12 +46,12 @@ int main(int argc, char** argv) {
     //for (int i = 0; i < 5; i++)   str3.pop_back();
 
     file1.close();
-    file2.close();
+    //file2.close();
     cout << str3 << endl;
 
-    string plainText = str3; //    string plainText = "暗号化される前の平文＝"+str3;
+    //string plainText = str3; //    string plainText = "暗号化される前の平文＝"+str3;
 
-    cout << "Plain Text : " << plainText << endl;
+    //cout << "Plain Text : " << plainText << endl;
 
 
     // 暗号化オブジェクトの作成

@@ -27,5 +27,10 @@
 *.out
 *.app
 
-crypt/Debug
-crypt/.vs
+encrypt/x64
+encrypt/Debug
+encrypt/.vs
+
+decrypt/x64
+decrypt/Debug
+decrypt/.vs
