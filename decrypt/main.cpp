@@ -1,10 +1,10 @@
-#include "Encrypt.h"
+#include "Decrypt.h"
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
-    Encrypt* encrypt;
-    encrypt = new Encrypt(argc, argv);
+    Decrypt* decrypt;
+    decrypt = new Decrypt(argv);
 
-    delete encrypt;
+    delete decrypt;
     return 0;
 }
