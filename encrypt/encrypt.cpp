@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 using namespace std;
 
@@ -22,7 +23,11 @@ void datadump(const char c[], void* dt, int len)
 
 Encrypt::Encrypt(char* _inputFileName[])
 {
-    //ifstream ifs(*_inputFileName);
+    //string filename;
+    ////ファイル名からバイナリファイルで読み込む
+    //cout << "復号化するファイル名を入力してください\n";
+    //getline(cin, filename);
+    //ifstream ifs(filename,ios::binary);
 
     //if (!ifs)
     //{
@@ -30,12 +35,29 @@ Encrypt::Encrypt(char* _inputFileName[])
     //    return;
     //}
 
+    //char data2[1];
+    ////1つ前の暗号ブロック
+    //char cipherBlockPre[1];
+
+    //ifs.read(data2, 1);
+    ////1つ前の暗号ブロックに暗号化されているブロックを格納
+    //memcpy(cipherBlockPre, data2, 1);
+
+    ////ブロック長ごとに処理
+    //for (int i = 0; i < 1; i++)
+    //{
+    //    decodeBlock[i] = data[i] ^ initialData[i];
+    //}
+
+    //cout << _inputFileName[0] << endl;
+    //cout << cipherBlockPre << endl;
+
     //string str = "";
 
     //// ファイルの中身を読み取って表示
     //while (getline(ifs, str))
     //{
-    //    cout << "ファイルの中身:" << str << endl;
+    //    cout << str << endl;
     //}
 
 
@@ -54,11 +76,11 @@ Encrypt::Encrypt(char* _inputFileName[])
 
     KeyExpansion(key);    //暗号化するための鍵の準備
     memcpy(data, init, NBb); //NBにて 4ワード 16バイトと定義している
+    unsigned char* cdt = (unsigned char*)data;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4 * 4; i++)
     {
-
-        cout << hex << data[i];
+        cout << hex << setw(2) << setfill('0') << (int)cdt[i];
         //printf("%02x", cdt[i]);
     }
 
@@ -66,17 +88,16 @@ Encrypt::Encrypt(char* _inputFileName[])
 
     Encryption(data);
 
+    unsigned char* cdt2 = (unsigned char*)data;
+
     //cout << showbase << endl;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4 * 4; i++)
     {
-        
-        cout << hex << data[i];
+        cout << hex << setw(2) << setfill('0') << (int)cdt2[i];
         //printf("%02x", cdt[i]);
     }
 
     cout << endl;
-
-    //cout << hex << data << endl;
 
     /* FIPS 197  P.38 Appendix C.2 AES-192 Test */
     memcpy(key, keys, 24);
@@ -88,14 +109,14 @@ Encrypt::Encrypt(char* _inputFileName[])
 
     Encryption(data);
 
-    for (int i = 0; i < 4; i++)
-    {
-        printf("%02x", data[i]);
-    }
+    //for (int i = 0; i < 4 * 4; i++)
+    //{
+    //    cout << hex << setw(2) << setfill('0') << (int)cdt[i];
+
+    //    //printf("%02x", data[i]);
+    //}
 
     cout << endl;
-
-    //cout << data << endl;
 
 
     /* FIPS 197  P.42 Appendix C.3 AES-256 Test */
@@ -108,14 +129,12 @@ Encrypt::Encrypt(char* _inputFileName[])
 
     Encryption(data);
 
-    for (int i = 0; i < 4; i++)
+    /*for (int i = 0; i < 4; i++)
     {
         printf("%02x", data[i]);
-    }
+    }*/
 
     cout << endl;
-
-    //cout << data << endl;
 }
 
 /************************************************************/

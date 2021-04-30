@@ -44,8 +44,10 @@ int main()
 
     //データ読込
     ifs.read(data, Block);
+
     //1つ前の暗号ブロックに暗号化されているブロックを格納
     memcpy(cipherBlockPre, data, Block);
+
     //復号化
     decode(data);
     //ブロック長ごとに処理
@@ -68,8 +70,10 @@ int main()
         {
             decodeBlock[i] = data[i] ^ cipherBlockPre[i];
         }
+
         //暗号化したブロックを出力
         ofs.write(decodeBlock, Block);
+
         //1つ前の暗号ブロックに暗号化されているブロックを格納
         memcpy(cipherBlockPre, dataTemp, Block);
     } while (true);
