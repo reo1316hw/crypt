@@ -11,16 +11,16 @@ using namespace std;
 unsigned char key[32];
 
 //読み込みデータ
-char dataa[NB];
+char dataa[NBb];
 
 //初期化ベクトル
-char initialData[NB];
+char initialData[NBb];
 
 //一時保存読み込みデータ
-char dataTemp[NB];
+char dataTemp[NBb];
 
 //1つ前の暗号ブロック
-char cipherBlockPre[NB];
+char cipherBlockPre[NBb];
 
 int w[60];                            /* FIPS 197 P.19 5.2 Key Expansion */
 //int data[NB];
@@ -57,12 +57,12 @@ int main(int argc, char* argv[])
     ofstream ofs(outFileName, ios::app | ios::binary);
 
     //復号ブロック
-    char decryptBlock[NB];
+    char decryptBlock[NBb];
 
-    //memset(initialData, 'I', NB);
+    memset(initialData, 'I', NBb);
 
     //データ読込
-    ifs.read(dataa, NB);
+    ifs.read(dataa, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
     memcpy(cipherBlockPre, dataa, NBb);
@@ -71,29 +71,29 @@ int main(int argc, char* argv[])
     invCipher(dataa);
 
     //ブロック長ごとに処理
-    for (int i = 0; i < NB; i++)
+    for (int i = 0; i < NBb; i++)
     {
         decryptBlock[i] = dataa[i]/* ^ initialData[i]*/;
     }
     //復号したブロックを出力
-    ofs.write(decryptBlock, NB);
+    ofs.write(decryptBlock, NBb);
 
     do {
         //データ読込
-        ifs.read(dataa, NB);
+        ifs.read(dataa, NBb);
         memcpy(dataTemp, dataa, NBb);
         //復号
         invCipher(dataa);
         //データがなかった場合終了する。
         if (ifs.eof()) break;
         //ブロック長ごとに処理
-        for (int i = 0; i < NB; i++)
+        for (int i = 0; i < NBb; i++)
         {
             decryptBlock[i] = dataa[i] ^ cipherBlockPre[i];
         }
 
         //復号したブロックを出力
-        ofs.write(decryptBlock, NB);
+        ofs.write(decryptBlock, NBb);
 
         //1つ前の暗号ブロックに暗号化されているブロックを格納
         memcpy(cipherBlockPre, dataTemp, NBb);
