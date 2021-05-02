@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     //復号ブロック
     char decryptBlock[NB];
 
-    memset(initialData, 'I', NB);
+    //memset(initialData, 'I', NB);
 
     //データ読込
     ifs.read(dataa, NB);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
     //ブロック長ごとに処理
     for (int i = 0; i < NB; i++)
     {
-        decryptBlock[i] = dataa[i] ^ initialData[i];
+        decryptBlock[i] = dataa[i]/* ^ initialData[i]*/;
     }
     //復号したブロックを出力
     ofs.write(decryptBlock, NB);

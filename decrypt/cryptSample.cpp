@@ -55,7 +55,7 @@
 /************************************************************/
 unsigned char key[32];
 int w[60];                            /* FIPS 197 P.19 5.2 Key Expansion */
-int data[NB];
+char data[NBb];
 int nk;                               /* 4,6,8(128,192,256 bit) Œ®‚Ì’·‚³ */
 int nr;                               /* 10,12,14 ƒ‰ƒEƒ“ƒh” */
 
@@ -108,9 +108,9 @@ int main()
     printf("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
     datadump("PLAINTEXT: ", data, 4);
     datadump("KEY:       ", key, 4);
-    Cipher(data);
+    Cipher((int*)data);
     datadump("ˆÃ†‰»:    ", data, 4);
-    invCipher(data);
+    invCipher((int*)data);
     datadump("•œ†‰»:    ", data, 4);
     printf("\n");
 
@@ -125,9 +125,9 @@ int main()
     printf("  <FIPS 197  P.38 Appendix C.2 AES-192 TEST>\n\n");
     datadump("PLAINTEXT: ", data, 4);
     datadump("KEY:       ", key, 6);
-    Cipher(data);
+    Cipher((int*)data);
     datadump("ˆÃ†‰»:    ", data, 4);
-    invCipher(data);
+    invCipher((int*)data);
     datadump("•œ†‰»:    ", data, 4);
     printf("\n");
 
@@ -142,9 +142,9 @@ int main()
     printf("  <FIPS 197  P.42 Appendix C.3 AES-256 TEST>\n\n");
     datadump("PLAINTEXT: ", data, 4);
     datadump("KEY:       ", key, 8);
-    Cipher(data);
+    Cipher((int*)data);
     datadump("ˆÃ†‰»:    ", data, 4);
-    invCipher(data);
+    invCipher((int*)data);
     datadump("•œ†‰»:    ", data, 4);
     return 0;
 }

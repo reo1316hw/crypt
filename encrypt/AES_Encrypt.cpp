@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#define NB 4
+//#define NB 4
 #define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
 
 using namespace std;
@@ -11,16 +11,16 @@ using namespace std;
 unsigned char key[32];
 
 //読み込みデータ
-char dataa[NB];
+char dataa[NBb];
 
 //初期化ベクトル
-char initialData[NB];
+char initialData[NBb];
 
 //一時保存読み込みデータ
-char dataTemp[NB];
+char dataTemp[NBb];
 
 //1つ前の暗号ブロック
-char cipherBlockPre[NB];
+char cipherBlockPre[NBb];
 
 int w[60];                            /* FIPS 197 P.19 5.2 Key Expansion */
 //int data[NB];
@@ -68,45 +68,45 @@ int main(int argc, char* argv[])
     ofstream ofs(outFileName, ios::app | ios::binary);
 
     //暗号ブロック
-    char encryptBlock[NB];
+    char encryptBlock[NBb];
 
-    memset(initialData, 'I', NB);
+    //memset(initialData, 'I', NB);
 
     //データ読込
-    ifs.read(dataa, NB);
+    ifs.read(dataa, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
-    memcpy(cipherBlockPre, dataa, NB);
+    memcpy(cipherBlockPre, dataa, NBb);
 
     //暗号化
     Cipher(dataa);
     //ブロック長ごとに処理
-    for (int i = 0; i < NB; i++)
+    for (int i = 0; i < NBb; i++)
     {
-        encryptBlock[i] = dataa[i] ^ initialData[i];
+        encryptBlock[i] = dataa[i]/* ^ initialData[i]*/;
     }
     //暗号化したブロックを出力
-    ofs.write(encryptBlock, NB);
+    ofs.write(encryptBlock, NBb);
 
     do {
         //データ読込
-        ifs.read(dataa, NB);
-        memcpy(dataTemp, dataa, NB);
+        ifs.read(dataa, NBb);
+        memcpy(dataTemp, dataa, NBb);
         //復号化
         Cipher(dataa);
         //データがなかった場合終了する。
         if (ifs.eof()) break;
         //ブロック長ごとに処理
-        for (int i = 0; i < NB; i++)
+        for (int i = 0; i < NBb; i++)
         {
             encryptBlock[i] = dataa[i] ^ cipherBlockPre[i];
         }
 
         //暗号化したブロックを出力
-        ofs.write(encryptBlock, NB);
+        ofs.write(encryptBlock, NBb);
 
         //1つ前の暗号ブロックに暗号化されているブロックを格納
-        memcpy(cipherBlockPre, dataTemp, NB);
+        memcpy(cipherBlockPre, dataTemp, NBb);
 
     } while (true);
 }
@@ -160,7 +160,15 @@ void SubBytes(char* _data)
 {
     int i, j;
     unsigned char* cb = (unsigned char*)_data;
-    for (i = 0; i < NBb; i += 4)//理論的な意味から二重ループにしているが意味は無い
+    //for (i = 0; i < NBb; i += 4)//理論的な意味から二重ループにしているが意味は無い
+    //{
+    //    for (j = 0; j < 4; j++)
+    //    {
+    //        cb[i + j] = Sbox[cb[i + j]];
+    //    }
+    //}
+
+    for (i = 0; i < 4; i++)//理論的な意味から二重ループにしているが意味は無い
     {
         for (j = 0; j < 4; j++)
         {
@@ -177,7 +185,7 @@ void ShiftRows(char* _data)
     unsigned char* cb = (unsigned char*)_data;
     unsigned char cw[NBb];
     memcpy(cw, cb, sizeof(cw));
-    for (i = 0; i < NB; i += 4)
+    /*for (i = 0; i < NB; i += 4)
     {
         i4 = i * 4;
         for (j = 1; j < 4; j++)
@@ -186,6 +194,18 @@ void ShiftRows(char* _data)
             cw[i4 + j + 1 * 4] = cb[i4 + j + ((j + 1) & 3) * 4];
             cw[i4 + j + 2 * 4] = cb[i4 + j + ((j + 2) & 3) * 4];
             cw[i4 + j + 3 * 4] = cb[i4 + j + ((j + 3) & 3) * 4];
+        }
+    }*/
+
+    for (i = 0; i < 4; i++)
+    {
+        //i4 = i * 4;
+        for (j = 0; j < 4; j++)
+        {
+            cw[i + j + 0 * 4] = cb[i + j + ((j + 0) & 3) * 4];
+            cw[i + j + 1 * 4] = cb[i + j + ((j + 1) & 3) * 4];
+            cw[i + j + 2 * 4] = cb[i + j + ((j + 2) & 3) * 4];
+            cw[i + j + 3 * 4] = cb[i + j + ((j + 3) & 3) * 4];
         }
     }
     memcpy(cb, cw, sizeof(cw));

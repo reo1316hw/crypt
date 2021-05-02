@@ -34,7 +34,7 @@ void KeyExpansion(void*);            /* FIPS 197  P.20 Figure 11 */
 int Cipher(char*);                    /* FIPS 197  P.15 Figure  5 */
 
 using namespace std;
-//void cipher(char* dst);
+void cipher(char* dst);
 
 int main()
 {
@@ -78,7 +78,7 @@ int main()
     }
 
     //暗号化
-    Cipher(cipherBlock);
+    cipher(cipherBlock);
     //暗号化したブロックを出力
     ofs.write(cipherBlock, Block);
     //1つ前の暗号ブロックに暗号化したブロックを格納
@@ -95,7 +95,7 @@ int main()
         }
 
         //暗号化
-        Cipher(cipherBlock);
+        cipher(cipherBlock);
         //暗号化したブロックを出力
         ofs.write(cipherBlock, Block);
         //1つ前の暗号ブロックに暗号化したブロックを格納
@@ -108,19 +108,19 @@ int main()
     return 0;
 }
 
-//void cipher(char* dst)
-//{
-//    //暗号鍵
-//    char cipherBlockTemp[Block];
-//    memset(cipherBlockTemp, 'S', Block);
-//    //ブロック長ごとに処理
-//    for (int i = 0; i < Block; i++)
-//    {
-//        //XOR暗号
-//        dst[i] = dst[i] ^ cipherBlockTemp[i];
-//    }
-//    return;
-//}
+void cipher(char* dst)
+{
+    //暗号鍵
+    char cipherBlockTemp[Block];
+    memset(cipherBlockTemp, 'S', Block);
+    //ブロック長ごとに処理
+    for (int i = 0; i < Block; i++)
+    {
+        //XOR暗号
+        dst[i] = dst[i] ^ cipherBlockTemp[i];
+    }
+    return;
+}
 
 /************************************************************/
 /* FIPS 197  P.16 Figure 7 */
