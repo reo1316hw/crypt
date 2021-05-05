@@ -1,47 +1,47 @@
-#include <string>
-#include <iostream>
-#include <fstream>
 #include "AES_Encrypt.h"
+#include <string>
 
 using namespace std;
 
+#define NB 4
+#define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
+
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 {
+    //読み込みデータ
+    int data[NB];
+
+    //初期化ベクトル
+    int initialData[NB];
+
+    //1つ前の暗号ブロック
+    int cipherBlockPre[NB];
+
+    //暗号ブロック
+    int encryptBlock[NB];
+
+    unsigned char key[32];
+
     unsigned char keys[] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
                       0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
                       0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
                       0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
 
-    /* FIPS 197  P.35 Appendix C.1 AES-128 Test */
     memcpy(key, keys, 16);
     nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
     nr = nk + 6;          //ラウンド数 10,12,14
 
-    KeyExpansion(key);    //暗号化するための鍵の準備
-
-    string fileName;    //ファイル名
-
-    //ファイル名からバイナリファイルで読み込む
-    cout << "暗号化するファイル名を入力してください\n";
-    //キーボード入力からファイル名を取得する
-    getline(cin, fileName);
-    ifstream ifs(fileName, ios::binary);
-
-    string outFileName; //ファイル名
-    //string outFileName = argv[1]; //ファイル名
-    //ofstreamを読み取りモードで開き、末尾に移動
-    cout << "出力するファイル名を入力してください\n";
-    //キーボード入力からファイル名を取得する
-    getline(cin, outFileName);
-    ofstream ofs(outFileName, ios::app | ios::binary);
-
-    //暗号ブロック
-    int encryptBlock[NB];
+    //暗号化するための鍵の準備
+    KeyExpansion(key);
+    //入力ファイルを読み込むためのインスタンスを生成
+    ReadInputFile(_inputFileName);
+    //出力ファイルを書き込むためのインスタンスを生成
+    WritingOutFile(_outputFileName);
 
     memset(initialData, 'I', NBb);
 
     //データ読込
-    ifs.read((char*)data, NBb);
+    ifs->read((char*)data, NBb);
 
     //ブロック長ごとに処理
     for (int i = 0; i < NB; i++)
@@ -53,17 +53,17 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
     Cipher(encryptBlock);
 
     //暗号化したブロックを出力
-    ofs.write((char*)encryptBlock, NBb);
+    ofs->write((char*)encryptBlock, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
     memcpy(cipherBlockPre, encryptBlock, NBb);
 
     do {
         //データ読込
-        ifs.read((char*)data, NBb);
+        ifs->read((char*)data, NBb);
 
         //データがなかった場合終了する。
-        if (ifs.eof()) break;
+        if (ifs->eof()) break;
         //ブロック長ごとに処理
         for (int i = 0; i < NB; i++)
         {
@@ -74,13 +74,52 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
         Cipher(encryptBlock);
 
         //暗号化したブロックを出力
-        ofs.write((char*)encryptBlock, NBb);
+        ofs->write((char*)encryptBlock, NBb);
 
         //1つ前の暗号ブロックに暗号化されているブロックを格納
         memcpy(cipherBlockPre, encryptBlock, NBb);
 
     } while (true);
 }
+
+Encrypt::~Encrypt()
+{
+    delete ifs;
+    delete ofs;
+}
+
+/**
+ * @fn 入力ファイルを読み込むためのインスタンスを生成
+ * @param _inputFileName 入力ファイル名
+ * @return true : 読み込めた, false : 読み込めなかった
+ */
+bool Encrypt::ReadInputFile(char* _inputFileName)
+{
+    //入力ファイル名
+    string fileName = _inputFileName;
+    //ファイル名からバイナリファイルで読み込む
+    ifs = new ifstream(fileName, ios::binary);
+
+    if (ifs)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * @fn 出力ファイルを書き込むためのインスタンスを生成
+ * @param _outputFileName 出力ファイル名
+ */
+void Encrypt::WritingOutFile(char* _outputFileName)
+{
+    //出力ファイル名
+    string outFileName = _outputFileName;
+    //ofstreamを読み取りモードで開き、末尾に移動
+    ofs = new ofstream(outFileName, ios::app | ios::binary);
+}
+
 
 /************************************************************/
 /* FIPS 197  P.15 Figure 5 */ //暗号化
@@ -144,7 +183,7 @@ void Encrypt::ShiftRows(int* _data)
 
 /************************************************************/
 /* FIPS 197 P.10 4.2 乗算 (n倍) */
-int Encrypt::mul(int dt, int n)
+int Encrypt::mul(int _dt, int _n)
 {
     int i, x = 0;
     for (i = 8; i > 0; i >>= 1)
@@ -152,16 +191,16 @@ int Encrypt::mul(int dt, int n)
         x <<= 1;
         if (x & 0x100)
             x = (x ^ 0x1b) & 0xff;
-        if ((n & i))
-            x ^= dt;
+        if ((_n & i))
+            x ^= _dt;
     }
     return(x);
 }
 
 /************************************************************/
-int Encrypt::dataget(void* _data, int n)
+int Encrypt::dataget(void* _data, int _n)
 {
-    return(((unsigned char*)_data)[n]);
+    return(((unsigned char*)_data)[_n]);
 }
 
 /************************************************************/
@@ -194,20 +233,20 @@ void Encrypt::MixColumns(int* _data)
 
 /************************************************************/
 /* FIPS 197  P.19 Figure 10 */
-void Encrypt::AddRoundKey(int* _data, int n)
+void Encrypt::AddRoundKey(int* _data, int _n)
 {
     int i;
     for (i = 0; i < NB; i++)
     {
-        _data[i] ^= w[i + NB * n];
+        _data[i] ^= w[i + NB * _n];
     }
 }
 
 /************************************************************/
 /* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
-int Encrypt::SubWord(int in)
+int Encrypt::SubWord(int _in)
 {
-    int inw = in;
+    int inw = _in;
     unsigned char* cin = (unsigned char*)&inw;
     cin[0] = Sbox[cin[0]];
     cin[1] = Sbox[cin[1]];
@@ -218,9 +257,9 @@ int Encrypt::SubWord(int in)
 
 /************************************************************/
 /* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
-int Encrypt::RotWord(int in)
+int Encrypt::RotWord(int _in)
 {
-    int inw = in, inw2 = 0;
+    int inw = _in, inw2 = 0;
     unsigned char* cin = (unsigned char*)&inw;
     unsigned char* cin2 = (unsigned char*)&inw2;
     cin2[0] = cin[1];
@@ -232,13 +271,13 @@ int Encrypt::RotWord(int in)
 
 /************************************************************/
 /* FIPS 197  P.20 Figure 11 */
-void Encrypt::KeyExpansion(void* key)
+void Encrypt::KeyExpansion(void* _key)
 {
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
-    memcpy(w, key, nk * 4);
+    memcpy(w, _key, nk * 4);
     for (i = nk; i < NB * (nr + 1); i++)
     {
         temp = w[i - 1];

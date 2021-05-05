@@ -1,20 +1,18 @@
-#include "Encrypt.h"
+#include "AES_Encrypt.h"
 #include <iostream>
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-   /* if (argc <= 1)
+    if (argc <= 1)
     {
         cout << "‚È‚¢‚æ" << endl;
         return 0;
     }
 
-    cout << argv[1] << endl;*/
-
     Encrypt* encrypt;
-    encrypt = new Encrypt(argv);
+    encrypt = new Encrypt(argv[1], argv[3]);
 
     delete encrypt;
     return 0;

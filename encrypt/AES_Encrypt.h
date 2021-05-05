@@ -1,16 +1,24 @@
 #pragma once
+#include <iostream>
+#include <fstream>
 
-#define NB 4
-#define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
+using namespace std;
 
 class Encrypt
 {
 public:
 
 	Encrypt(char* _inputFileName, char* _outputFileName);
-	~Encrypt() {};
+	~Encrypt();
 
 private:
+
+	int w[60];
+	int nk;		/* 4,6,8(128,192,256 bit) 鍵の長さ */
+	int nr;		/* 10,12,14 ラウンド数 */
+
+	ifstream* ifs;
+	ofstream* ofs;
 
 	//
 	int Sbox[256] = {
@@ -32,31 +40,29 @@ private:
 	  0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
 	};
 
-	unsigned char key[32];
+	/**
+	 * @fn 入力ファイルを読み込むためのインスタンスを生成
+	 * @param _inputFileName 入力ファイル名
+	 * @return true : 読み込めた, false : 読み込めなかった
+	 */
+	bool ReadInputFile(char* _inputFileName);
 
-	//読み込みデータ
-	int data[NB];
-
-	//初期化ベクトル
-	int initialData[NB];
-
-	//1つ前の暗号ブロック
-	int cipherBlockPre[NB];
-
-	int w[60];
-	int nk;
-	int nr;
+	/**
+	 * @fn 出力ファイルを書き込むためのインスタンスを生成
+	 * @param _outputFileName 出力ファイル名
+	 */
+	void WritingOutFile(char* _outputFileName);
 
 	void SubBytes(int* _data);
 	void ShiftRows(int* _data);
 	void MixColumns(int* _data);
-	void AddRoundKey(int* _data, int n);
+	void AddRoundKey(int* _data, int _n);
 
-	int mul(int dt, int n);
-	int dataget(void* _data, int n);
-	int SubWord(int in);
-	int RotWord(int in);
-	void KeyExpansion(void* key);
+	int mul(int _dt, int _n);
+	int dataget(void* _data, int _n);
+	int SubWord(int _in);
+	int RotWord(int _in);
+	void KeyExpansion(void* _key);
 
 	int Cipher(int* _data);
 
