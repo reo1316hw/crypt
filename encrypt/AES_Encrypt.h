@@ -1,8 +1,11 @@
 #pragma once
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
+
+#define NB 4
+#define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
 
 class Encrypt
 {
@@ -13,12 +16,31 @@ public:
 
 private:
 
+	//読み込みデータ
+	int data[NB];
+
+	//初期化ベクトル
+	int initialData[NB];
+
+	//1つ前の暗号ブロック
+	int cipherBlockPre[NB];
+
+	//暗号ブロック
+	int encryptBlock[NB];
+
 	int w[60];
 	int nk;		/* 4,6,8(128,192,256 bit) 鍵の長さ */
 	int nr;		/* 10,12,14 ラウンド数 */
 
 	ifstream* ifs;
 	ofstream* ofs;
+
+	unsigned char key[32];
+
+	unsigned char keys[32] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+					  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+					  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+					  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
 
 	//
 	int Sbox[256] = {
@@ -41,17 +63,15 @@ private:
 	};
 
 	/**
-	 * @fn 入力ファイルを読み込むためのインスタンスを生成
+	 * @fn 入力ファイルを開く処理
 	 * @param _inputFileName 入力ファイル名
-	 * @return true : 読み込めた, false : 読み込めなかった
+	 * @return true : 開けた, false : 開けなかった
 	 */
-	bool ReadInputFile(char* _inputFileName);
+	bool OpenInputFile(char* _inputFileName);
 
-	/**
-	 * @fn 出力ファイルを書き込むためのインスタンスを生成
-	 * @param _outputFileName 出力ファイル名
-	 */
-	void WritingOutFile(char* _outputFileName);
+	void InitWritingEncryptData();
+
+	void WritingEncryptData();
 
 	void SubBytes(int* _data);
 	void ShiftRows(int* _data);

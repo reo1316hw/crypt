@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     }
 
     Encrypt* encrypt;
-    encrypt = new Encrypt(argv[1], argv[3]);
+    encrypt = new Encrypt(argv[2], argv[4]);
 
     delete encrypt;
     return 0;

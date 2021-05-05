@@ -1,43 +1,48 @@
 #include "AES_Encrypt.h"
-#include <string>
-
-using namespace std;
-
-#define NB 4
-#define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
 
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 {
-    //読み込みデータ
-    int data[NB];
-
-    //初期化ベクトル
-    int initialData[NB];
-
-    //1つ前の暗号ブロック
-    int cipherBlockPre[NB];
-
-    //暗号ブロック
-    int encryptBlock[NB];
-
-    unsigned char key[32];
-
-    unsigned char keys[] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-                      0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-                      0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-                      0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
-
-    memcpy(key, keys, 16);
-    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    nr = nk + 6;          //ラウンド数 10,12,14
-
     //暗号化するための鍵の準備
     KeyExpansion(key);
-    //入力ファイルを読み込むためのインスタンスを生成
-    ReadInputFile(_inputFileName);
-    //出力ファイルを書き込むためのインスタンスを生成
-    WritingOutFile(_outputFileName);
+    //入力ファイルを開く処理
+    bool practicable = OpenInputFile(_inputFileName);
+    //書き込むための出力ファイルを生成
+    ofs = new ofstream(_outputFileName, ios::app | ios::binary);
 
+    if (practicable)
+    {
+        InitWritingEncryptData();
+        WritingEncryptData();
+    }
+}
+
+Encrypt::~Encrypt()
+{
+    delete ifs;
+    delete ofs;
+}
+
+/**
+ * @fn 入力ファイルを開く処理
+ * @param _inputFileName 入力ファイル名
+ * @return true : 開けた, false : 開けなかった
+ */
+
+bool Encrypt::OpenInputFile(char* _inputFileName)
+{
+    //ファイル名からバイナリファイルで読み込む
+    ifs = new ifstream(_inputFileName, ios::binary);
+
+    if (ifs)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void Encrypt::InitWritingEncryptData()
+{
     memset(initialData, 'I', NBb);
 
     //データ読込
@@ -57,7 +62,10 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
     memcpy(cipherBlockPre, encryptBlock, NBb);
+}
 
+void Encrypt::WritingEncryptData()
+{
     do {
         //データ読込
         ifs->read((char*)data, NBb);
@@ -82,47 +90,7 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
     } while (true);
 }
 
-Encrypt::~Encrypt()
-{
-    delete ifs;
-    delete ofs;
-}
-
-/**
- * @fn 入力ファイルを読み込むためのインスタンスを生成
- * @param _inputFileName 入力ファイル名
- * @return true : 読み込めた, false : 読み込めなかった
- */
-bool Encrypt::ReadInputFile(char* _inputFileName)
-{
-    //入力ファイル名
-    string fileName = _inputFileName;
-    //ファイル名からバイナリファイルで読み込む
-    ifs = new ifstream(fileName, ios::binary);
-
-    if (ifs)
-    {
-        return true;
-    }
-    
-    return false;
-}
-
-/**
- * @fn 出力ファイルを書き込むためのインスタンスを生成
- * @param _outputFileName 出力ファイル名
- */
-void Encrypt::WritingOutFile(char* _outputFileName)
-{
-    //出力ファイル名
-    string outFileName = _outputFileName;
-    //ofstreamを読み取りモードで開き、末尾に移動
-    ofs = new ofstream(outFileName, ios::app | ios::binary);
-}
-
-
-/************************************************************/
-/* FIPS 197  P.15 Figure 5 */ //暗号化
+//暗号化
 int Encrypt::Cipher(int* _data)
 {
     int i;
@@ -143,8 +111,6 @@ int Encrypt::Cipher(int* _data)
     return(i);
 }
 
-/************************************************************/
-/* FIPS 197  P.16 Figure 6 */
 void Encrypt::SubBytes(int* _data)
 {
     int i, j;
@@ -158,8 +124,6 @@ void Encrypt::SubBytes(int* _data)
     }
 }
 
-/************************************************************/
-/* FIPS 197  P.17 Figure 8 */
 void Encrypt::ShiftRows(int* _data)
 {
     int i, j, i4;
@@ -181,8 +145,7 @@ void Encrypt::ShiftRows(int* _data)
     memcpy(cb, cw, sizeof(cw));
 }
 
-/************************************************************/
-/* FIPS 197 P.10 4.2 乗算 (n倍) */
+//乗算 (n倍) 
 int Encrypt::mul(int _dt, int _n)
 {
     int i, x = 0;
@@ -197,14 +160,11 @@ int Encrypt::mul(int _dt, int _n)
     return(x);
 }
 
-/************************************************************/
 int Encrypt::dataget(void* _data, int _n)
 {
     return(((unsigned char*)_data)[_n]);
 }
 
-/************************************************************/
-/* FIPS 197  P.18 Figure 9 */
 void Encrypt::MixColumns(int* _data)
 {
     int i, i4, x;
@@ -231,8 +191,6 @@ void Encrypt::MixColumns(int* _data)
     }
 }
 
-/************************************************************/
-/* FIPS 197  P.19 Figure 10 */
 void Encrypt::AddRoundKey(int* _data, int _n)
 {
     int i;
@@ -242,8 +200,6 @@ void Encrypt::AddRoundKey(int* _data, int _n)
     }
 }
 
-/************************************************************/
-/* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
 int Encrypt::SubWord(int _in)
 {
     int inw = _in;
@@ -255,8 +211,6 @@ int Encrypt::SubWord(int _in)
     return(inw);
 }
 
-/************************************************************/
-/* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
 int Encrypt::RotWord(int _in)
 {
     int inw = _in, inw2 = 0;
@@ -269,10 +223,12 @@ int Encrypt::RotWord(int _in)
     return(inw2);
 }
 
-/************************************************************/
-/* FIPS 197  P.20 Figure 11 */
 void Encrypt::KeyExpansion(void* _key)
 {
+    memcpy(key, keys, 16);
+    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
+    nr = nk + 6;          //ラウンド数 10,12,14
+
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
