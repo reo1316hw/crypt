@@ -1,14 +1,12 @@
 #include "AES_Decrypt.h"
 
-using namespace std;
-
 int main(int argc, char* argv[])
 {
-    /*if (argc <= 1)
+    if (argc <= 1)
     {
         cout << "‚È‚¢‚æ" << endl;
         return 0;
-    }*/
+    }
 
     Decrypt decrypt(argv[2], argv[4]);
 

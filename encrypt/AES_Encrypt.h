@@ -11,7 +11,16 @@ class Encrypt
 {
 public:
 
+	/**
+	 * @fn コンストラクタ
+	 * @param _inputFileName 入力ファイル名
+	 * @param _outputFileName 出力ファイル名
+	 */
 	Encrypt(char* _inputFileName, char* _outputFileName);
+
+	/**
+	 * @fn デストラクタ
+	 */
 	~Encrypt();
 
 private:
@@ -29,7 +38,7 @@ private:
 	  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f 
 	};
 
-	//読み込みデータ
+	//入力ファイルを読み込んだデータ
 	int data[NB];
 
 	//初期化ベクトル
@@ -65,14 +74,20 @@ private:
 	ofstream* ofs;
 
 	/**
-	 * @fn 入力ファイルを開く処理
+	 * @fn 入力ファイルを開く
 	 * @param _inputFileName 入力ファイル名
 	 * @return true : 開けた, false : 開けなかった
 	 */
 	bool OpenInputFile(char* _inputFileName);
 
+	/**
+	 * @fn 初回の1ブロック分の暗号化データを書き込み
+	 */
 	void InitWritingEncryptData();
 
+	/**
+	 * @fn EOFまで暗号化したデータを書き込み
+	 */
 	void WritingEncryptData();
 
 	void SubBytes(int* _data);
@@ -84,8 +99,17 @@ private:
 	int Dataget(void* _data, int _n);
 	int SubWord(int _in);
 	int RotWord(int _in);
+
+	/**
+	 * @fn 暗号化するための鍵の準備
+	 * @param _key 共通鍵
+	 */
 	void KeyExpansion(void* _key);
 
+	/**
+	 * @fn AESによる暗号化
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	int Cipher(int* _data);
 
 };

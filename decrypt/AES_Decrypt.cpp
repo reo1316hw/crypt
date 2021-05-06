@@ -6,7 +6,7 @@ Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
     nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
     nr = nk + 6;          //ラウンド数 10,12,14
 
-    //暗号化するための鍵の準備
+    //復号するための鍵の準備
     KeyExpansion(key);
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
@@ -35,6 +35,11 @@ Decrypt::~Decrypt()
     delete ofs;
 }
 
+/**
+ * @fn 入力ファイルを開く
+ * @param _inputFileName 入力ファイル名
+ * @return true : 開けた, false : 開けなかった
+ */
 bool Decrypt::OpenInputFile(char* _inputFileName)
 {
     //ファイル名からバイナリファイルで読み込む

@@ -2,6 +2,10 @@
 
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 {
+    memcpy(key, keys, 16);
+    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
+    nr = nk + 6;          //ラウンド数 10,12,14
+
     //暗号化するための鍵の準備
     KeyExpansion(key);
     //入力ファイルを開く処理
@@ -11,8 +15,14 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 
     if (practicable)
     {
+        //初回の1ブロック分の暗号化データを書き込み
         InitWritingEncryptData();
+        //EOFまで暗号化したデータを書き込み
         WritingEncryptData();
+    }
+    else
+    {
+        return;
     }
 
     practicable = false;
@@ -25,7 +35,7 @@ Encrypt::~Encrypt()
 }
 
 /**
- * @fn 入力ファイルを開く処理
+ * @fn 入力ファイルを開く
  * @param _inputFileName 入力ファイル名
  * @return true : 開けた, false : 開けなかった
  */
