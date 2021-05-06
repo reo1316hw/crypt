@@ -1,17 +1,46 @@
 #pragma once
+#include <fstream>
+#include <iostream>
+
+using namespace std;
+
+const int NB = 4;
+const int NBb = 16; /* 128bit 固定として規格されている(データの長さ) */
 
 class Decrypt
 {
 public:
 
 	Decrypt(char* _iputFileName, char* _outputFileName);
-	~Decrypt() {};
+	~Decrypt();
 
 private:
 
-	int w[60];
+	int w[64];
 	int nk;                               /* 4,6,8(128,192,256 bit) 鍵の長さ */
 	int nr;                               /* 10,12,14 ラウンド数 */
+
+	unsigned char key[32];
+
+	unsigned char keys[32] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+				  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+				  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+				  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
+
+	//読み込みデータ
+	int data[NB];
+
+	//初期化ベクトル
+	int initialData[NB];
+
+	//一時保存読み込みデータ
+	int dataTemp[NB];
+
+	//1つ前の暗号ブロック
+	int cipherBlockPre[NB];
+
+	//復号ブロック
+	int decryptBlock[NB];
 
 	int Sbox[256] = {
 	  0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
@@ -51,16 +80,41 @@ private:
 	  0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
 	};
 
-	void invShiftRows(int* _data);
-	void invSubBytes(int* _data);
-	void invMixColumns(int* _data);
+	ifstream* ifs;
+	ofstream* ofs;
+
+	/**
+	 * @fn 入力ファイルを開く
+	 * @param _inputFileName 入力ファイル名
+	 * @return true : 開けた, false : 開けなかった
+	 */
+	bool OpenInputFile(char* _inputFileName);
+
+	/**
+	 * @fn 初回の1ブロック分の復号データを書き込み
+	 */
+	void InitWritingDecryptData();
+
+	/**
+	 * @fn EOFまで復号したデータを書き込み
+	 */
+	void WritingDecryptData();
+
+	void InvShiftRows(int* _data);
+	void InvSubBytes(int* _data);
+	void InvMixColumns(int* _data);
 	void AddRoundKey(int* _data, int _n);
 
-	int mul(int _dt, int _n);
-	int dataget(void* _data, int _n);
+	int Mul(int _dt, int _n);
+	int Dataget(void* _data, int _n);
 	int SubWord(int _in);
 	int RotWord(int _in);
+
+	/**
+	 * @fn 暗号化するための鍵の準備
+	 * @param _key
+	 */
 	void KeyExpansion(void* _key);
 
-	int invCipher(int* _data);
+	int InvCipher(int* _data);
 };

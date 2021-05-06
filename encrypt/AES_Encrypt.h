@@ -4,8 +4,8 @@
 
 using namespace std;
 
-#define NB 4
-#define NBb 16                        /* 128bit 固定として規格されている(データの長さ) */
+const int NB = 4;
+const int NBb = 16; /* 128bit 固定として規格されている(データの長さ) */
 
 class Encrypt
 {
@@ -15,6 +15,19 @@ public:
 	~Encrypt();
 
 private:
+
+	int w[64];
+	int nk;		/* 4,6,8(128,192,256 bit) 鍵の長さ */
+	int nr;		/* 10,12,14 ラウンド数 */
+
+	unsigned char key[32];
+
+	unsigned char keys[32] = { 
+	  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+	  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+	  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+	  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f 
+	};
 
 	//読み込みデータ
 	int data[NB];
@@ -27,20 +40,6 @@ private:
 
 	//暗号ブロック
 	int encryptBlock[NB];
-
-	int w[60];
-	int nk;		/* 4,6,8(128,192,256 bit) 鍵の長さ */
-	int nr;		/* 10,12,14 ラウンド数 */
-
-	ifstream* ifs;
-	ofstream* ofs;
-
-	unsigned char key[32];
-
-	unsigned char keys[32] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-					  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-					  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-					  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
 
 	//
 	int Sbox[256] = {
@@ -62,6 +61,9 @@ private:
 	  0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
 	};
 
+	ifstream* ifs;
+	ofstream* ofs;
+
 	/**
 	 * @fn 入力ファイルを開く処理
 	 * @param _inputFileName 入力ファイル名
@@ -78,8 +80,8 @@ private:
 	void MixColumns(int* _data);
 	void AddRoundKey(int* _data, int _n);
 
-	int mul(int _dt, int _n);
-	int dataget(void* _data, int _n);
+	int Mul(int _dt, int _n);
+	int Dataget(void* _data, int _n);
 	int SubWord(int _in);
 	int RotWord(int _in);
 	void KeyExpansion(void* _key);

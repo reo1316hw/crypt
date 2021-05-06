@@ -11,9 +11,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    Encrypt* encrypt;
-    encrypt = new Encrypt(argv[2], argv[4]);
+    Encrypt encrypt(argv[2], argv[4]);
 
-    delete encrypt;
     return 0;
 }

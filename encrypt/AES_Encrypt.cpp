@@ -14,6 +14,8 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
         InitWritingEncryptData();
         WritingEncryptData();
     }
+
+    practicable = false;
 }
 
 Encrypt::~Encrypt()
@@ -27,7 +29,6 @@ Encrypt::~Encrypt()
  * @param _inputFileName 入力ファイル名
  * @return true : 開けた, false : 開けなかった
  */
-
 bool Encrypt::OpenInputFile(char* _inputFileName)
 {
     //ファイル名からバイナリファイルで読み込む
@@ -37,8 +38,11 @@ bool Encrypt::OpenInputFile(char* _inputFileName)
     {
         return true;
     }
-
-    return false;
+    else
+    {
+        cout << "ファイルが開けませんでした" << endl;
+        return false;
+    }
 }
 
 void Encrypt::InitWritingEncryptData()
@@ -146,7 +150,7 @@ void Encrypt::ShiftRows(int* _data)
 }
 
 //乗算 (n倍) 
-int Encrypt::mul(int _dt, int _n)
+int Encrypt::Mul(int _dt, int _n)
 {
     int i, x = 0;
     for (i = 8; i > 0; i >>= 1)
@@ -160,7 +164,7 @@ int Encrypt::mul(int _dt, int _n)
     return(x);
 }
 
-int Encrypt::dataget(void* _data, int _n)
+int Encrypt::Dataget(void* _data, int _n)
 {
     return(((unsigned char*)_data)[_n]);
 }
@@ -171,22 +175,22 @@ void Encrypt::MixColumns(int* _data)
     for (i = 0; i < NB; i++)
     {
         i4 = i * 4;
-        x = mul(dataget(_data, i4 + 0), 2) ^
-            mul(dataget(_data, i4 + 1), 3) ^
-            mul(dataget(_data, i4 + 2), 1) ^
-            mul(dataget(_data, i4 + 3), 1);
-        x |= (mul(dataget(_data, i4 + 1), 2) ^
-            mul(dataget(_data, i4 + 2), 3) ^
-            mul(dataget(_data, i4 + 3), 1) ^
-            mul(dataget(_data, i4 + 0), 1)) << 8;
-        x |= (mul(dataget(_data, i4 + 2), 2) ^
-            mul(dataget(_data, i4 + 3), 3) ^
-            mul(dataget(_data, i4 + 0), 1) ^
-            mul(dataget(_data, i4 + 1), 1)) << 16;
-        x |= (mul(dataget(_data, i4 + 3), 2) ^
-            mul(dataget(_data, i4 + 0), 3) ^
-            mul(dataget(_data, i4 + 1), 1) ^
-            mul(dataget(_data, i4 + 2), 1)) << 24;
+        x = Mul(Dataget(_data, i4 + 0), 2) ^
+            Mul(Dataget(_data, i4 + 1), 3) ^
+            Mul(Dataget(_data, i4 + 2), 1) ^
+            Mul(Dataget(_data, i4 + 3), 1);
+        x |= (Mul(Dataget(_data, i4 + 1), 2) ^
+            Mul(Dataget(_data, i4 + 2), 3) ^
+            Mul(Dataget(_data, i4 + 3), 1) ^
+            Mul(Dataget(_data, i4 + 0), 1)) << 8;
+        x |= (Mul(Dataget(_data, i4 + 2), 2) ^
+            Mul(Dataget(_data, i4 + 3), 3) ^
+            Mul(Dataget(_data, i4 + 0), 1) ^
+            Mul(Dataget(_data, i4 + 1), 1)) << 16;
+        x |= (Mul(Dataget(_data, i4 + 3), 2) ^
+            Mul(Dataget(_data, i4 + 0), 3) ^
+            Mul(Dataget(_data, i4 + 1), 1) ^
+            Mul(Dataget(_data, i4 + 2), 1)) << 24;
         _data[i] = x;
     }
 }
@@ -229,7 +233,7 @@ void Encrypt::KeyExpansion(void* _key)
     nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
     nr = nk + 6;          //ラウンド数 10,12,14
 
-    /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
+    /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は Mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
