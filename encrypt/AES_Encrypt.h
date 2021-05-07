@@ -4,6 +4,7 @@
 
 using namespace std;
 
+//ワード数(1word = 4byte = 32bit)
 const int NB = 4;
 //128bit 固定として規格されている(データの長さ)
 const int NBb = 16;
@@ -26,40 +27,42 @@ public:
 
 private:
 
-	//
-	int w[64];
 	//4,6,8(128,192,256 bit) 鍵の長さ
-	int nk;
+	int mKeyLength;
 	//10,12,14 ラウンド数
-	int nr;
+	int mRound;
+	//書き込み処理を行うか
+	bool mWritingRoopFlag;
 
-	//共通暗号鍵のデータをコピーする配列(コピーするときに鍵の長さを設定するため)
-	unsigned char key[32];
+	//共通鍵のデータをコピーする配列(コピーするときに鍵の長さを設定するため)
+	unsigned char mKey[32];
 
-	//共通暗号鍵
-	unsigned char keys[32] = { 
+	//共通鍵
+	unsigned char mKeys[32] = {
 	  0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
 	  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
 	  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
 	  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f 
 	};
 
+	//ラウンド鍵
+	int mRoundKey[64];
+
 	//入力ファイルを読み込んだデータ
-	int data[NB];
+	int mData[NB];
 
 	//初期化ベクトル
-	int initialData[NB];
+	int mInitialData[NB];
 
 	//1つ前の暗号ブロック
-	int cipherBlockPre[NB];
+	int mEncryptBlockPre[NB];
 
 	//暗号ブロック
-	int encryptBlock[NB];
+	int mEncryptBlock[NB];
 
-
-	//ラインダールSボックス(代替ボックス)
+	//ラインダールSボックス(換字表)
 	//フォワードSボックス
-	int Sbox[256] = {
+	int mSbox[256] = {
 	  0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
 	  0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
 	  0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -78,8 +81,10 @@ private:
 	  0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
 	};
 
-	ifstream* ifs;
-	ofstream* ofs;
+	//入力ファイルストリーム
+	ifstream* mIfs;
+	//出力ファイルストリーム
+	ofstream* mOfs;
 
 	/**
 	 * @fn 入力ファイルを開く
@@ -98,9 +103,30 @@ private:
 	 */
 	void WritingEncryptData();
 
+	/**
+	 * @fn 各マスに分けられた1byte長のマスの内部で換字表を用いてbit置換を行う
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	void SubBytes(int* _data);
+
+	/**
+	 * @fn 4バイト単位の行を一定規則で左シフトする
+	 * @brief 4×4マスの1行目は左シフトせず、2行目は1左シフト、3行目は2左シフト、4行目は3左シフトする
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	void ShiftRows(int* _data);
+
+	/**
+	 * @fn ビット演算による４バイト単位の行列変換
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	void MixColumns(int* _data);
+
+	/**
+	 * @fn ラウンド鍵とのXORをとる
+	 * @param _data 入力ファイルを読み込んだデータ
+	 * @param _n 
+	 */
 	void AddRoundKey(int* _data, int _n);
 
 	int Mul(int _dt, int _n);

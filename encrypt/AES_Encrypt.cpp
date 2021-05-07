@@ -1,18 +1,24 @@
 #include "AES_Encrypt.h"
 
+/**
+ * @fn コンストラクタ
+ * @param _inputFileName 入力ファイル名
+ * @param _outputFileName 出力ファイル名
+ */
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
+    : mWritingRoopFlag(true)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
     //書き込むための出力ファイルを生成
-    ofs = new ofstream(_outputFileName, ios::app | ios::binary);
+    mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
 
-    memcpy(key, keys, 16);
-    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    nr = nk + 6;          //ラウンド数 10,12,14
+    memcpy(mKey, mKeys, 16);
+    mKeyLength = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
+    mRound = mKeyLength + 6;          //ラウンド数 10,12,14
 
     //暗号化するための鍵の準備
-    KeyExpansion(key);
+    KeyExpansion(mKey);
 
     //入力ファイルが開かれたら書き込み処理を行う
     if (practicable)
@@ -31,10 +37,13 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
     practicable = false;
 }
 
+/**
+ * @fn デストラクタ
+ */
 Encrypt::~Encrypt()
 {
-    delete ifs;
-    delete ofs;
+    delete mIfs;
+    delete mOfs;
 }
 
 /**
@@ -45,10 +54,10 @@ Encrypt::~Encrypt()
 bool Encrypt::OpenInputFile(char* _inputFileName)
 {
     //ファイル名からバイナリファイルで読み込む
-    ifs = new ifstream(_inputFileName, ios::binary);
+    mIfs = new ifstream(_inputFileName, ios::binary);
 
     //ファイルが開けたらtrueを返す
-    if (ifs)
+    if (mIfs)
     {
         return true;
     }
@@ -60,64 +69,79 @@ bool Encrypt::OpenInputFile(char* _inputFileName)
     }
 }
 
+/**
+ * @fn 初回の1ブロック分の暗号化データを書き込み
+ */
 void Encrypt::InitWritingEncryptData()
 {
     //初期化ベクトルの中身を全て"I" = 0x49にする
-    memset(initialData, 'I', NBb);
+    memset(mInitialData, 'I', NBb);
 
     //最初の1ブロックをデータ読込
-    ifs->read((char*)data, NBb);
+    mIfs->read((char*)mData, NBb);
 
     //暗号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
     for (int i = 0; i < NB; i++)
     {
-        encryptBlock[i] = data[i] ^ initialData[i];
+        mEncryptBlock[i] = mData[i] ^ mInitialData[i];
     }
 
     //最初の1ブロックを暗号化
-    Cipher(encryptBlock);
+    Cipher(mEncryptBlock);
 
     //暗号化した最初の1ブロックを書き込み
-    ofs->write((char*)encryptBlock, NBb);
+    mOfs->write((char*)mEncryptBlock, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
-    memcpy(cipherBlockPre, encryptBlock, NBb);
+    memcpy(mEncryptBlockPre, mEncryptBlock, NBb);
 }
 
+/**
+ * @fn EOFまで暗号化したデータを書き込み
+ */
 void Encrypt::WritingEncryptData()
 {
-    //データがなかった場合終了する。
-    while (ifs->eof())
+    while (mWritingRoopFlag)
     {
         //1ブロック分データ読込
-        ifs->read((char*)data, NBb);
+        mIfs->read((char*)mData, NBb);
+
+        //データがなかった場合終了する。
+        if (mIfs->eof())
+        {
+            mWritingRoopFlag = false;
+            break;
+        }
 
         //ブロック長ごとに処理
         //暗号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
         for (int i = 0; i < NB; i++)
         {
-            encryptBlock[i] = data[i] ^ cipherBlockPre[i];
+            mEncryptBlock[i] = mData[i] ^ mEncryptBlockPre[i];
         }
 
         //1ブロック分暗号化
-        Cipher(encryptBlock);
+        Cipher(mEncryptBlock);
 
         //暗号化した1ブロックを書き込み
-        ofs->write((char*)encryptBlock, NBb);
+        mOfs->write((char*)mEncryptBlock, NBb);
 
         //1つ前の暗号ブロックに暗号化されているブロックを格納
-        memcpy(cipherBlockPre, encryptBlock, NBb);
+        memcpy(mEncryptBlockPre, mEncryptBlock, NBb);
     }
 }
 
-//暗号化
+/**
+ * @fn AESによる暗号化
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 int Encrypt::Cipher(int* _data)
 {
     int i;
 
     AddRoundKey(_data, 0);
 
-    for (i = 1; i < nr; i++)
+    for (i = 1; i < mRound; i++)
     {
         SubBytes(_data);
         ShiftRows(_data);
@@ -131,6 +155,10 @@ int Encrypt::Cipher(int* _data)
     return(i);
 }
 
+/**
+ * @fn 各マスに分けられた1byte長のマスの内部で換字表を用いてbit置換を行う
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Encrypt::SubBytes(int* _data)
 {
     int i, j;
@@ -139,11 +167,16 @@ void Encrypt::SubBytes(int* _data)
     {
         for (j = 0; j < 4; j++)
         {
-            cb[i + j] = Sbox[cb[i + j]];
+            cb[i + j] = mSbox[cb[i + j]];
         }
     }
 }
 
+/**
+ * @fn 4バイト単位の行を一定規則で左シフトする
+ * @brief 4×4マスの1行目は左シフトせず、2行目は1左シフト、3行目は2左シフト、4行目は3左シフトする
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Encrypt::ShiftRows(int* _data)
 {
     int i, j, i4;
@@ -185,6 +218,10 @@ int Encrypt::Dataget(void* _data, int _n)
     return(((unsigned char*)_data)[_n]);
 }
 
+/**
+ * @fn ビット演算による４バイト単位の行列変換
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Encrypt::MixColumns(int* _data)
 {
     int i, i4, x;
@@ -211,12 +248,17 @@ void Encrypt::MixColumns(int* _data)
     }
 }
 
+/**
+ * @fn ラウンド鍵とのXORをとる
+ * @param _data 入力ファイルを読み込んだデータ
+ * @param _n 
+ */
 void Encrypt::AddRoundKey(int* _data, int _n)
 {
     int i;
     for (i = 0; i < NB; i++)
     {
-        _data[i] ^= w[i + NB * _n];
+        _data[i] ^= mRoundKey[i + NB * _n];
     }
 }
 
@@ -224,10 +266,10 @@ int Encrypt::SubWord(int _in)
 {
     int inw = _in;
     unsigned char* cin = (unsigned char*)&inw;
-    cin[0] = Sbox[cin[0]];
-    cin[1] = Sbox[cin[1]];
-    cin[2] = Sbox[cin[2]];
-    cin[3] = Sbox[cin[3]];
+    cin[0] = mSbox[cin[0]];
+    cin[1] = mSbox[cin[1]];
+    cin[2] = mSbox[cin[2]];
+    cin[3] = mSbox[cin[3]];
     return(inw);
 }
 
@@ -243,20 +285,24 @@ int Encrypt::RotWord(int _in)
     return(inw2);
 }
 
+/**
+ * @fn 暗号化するための鍵の準備
+ * @param _key 共通鍵
+ */
 void Encrypt::KeyExpansion(void* _key)
 {
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は Mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
-    memcpy(w, _key, nk * 4);
-    for (i = nk; i < NB * (nr + 1); i++)
+    memcpy(mRoundKey, _key, mKeyLength * 4);
+    for (i = mKeyLength; i < NB * (mRound + 1); i++)
     {
-        temp = w[i - 1];
-        if ((i % nk) == 0)
-            temp = SubWord(RotWord(temp)) ^ Rcon[(i / nk) - 1];
-        else if (nk > 6 && (i % nk) == 4)
+        temp = mRoundKey[i - 1];
+        if ((i % mKeyLength) == 0)
+            temp = SubWord(RotWord(temp)) ^ Rcon[(i / mKeyLength) - 1];
+        else if (mKeyLength > 6 && (i % mKeyLength) == 4)
             temp = SubWord(temp);
-        w[i] = w[i - nk] ^ temp;
+        mRoundKey[i] = mRoundKey[i - mKeyLength] ^ temp;
     }
 }

@@ -6,6 +6,7 @@
  * @param _outputFileName 出力ファイル名
  */
 Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
+    : mWritingRoopFlag(true)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
@@ -80,7 +81,7 @@ void Decrypt::InitWritingDecryptData()
     mIfs->read((char*)mData, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
-    memcpy(mCipherBlockPre, mData, NBb);
+    memcpy(mEncryptBlockPre, mData, NBb);
 
     //最初の1ブロックを復号
     InvCipher(mData);
@@ -101,10 +102,17 @@ void Decrypt::InitWritingDecryptData()
 void Decrypt::WritingDecryptData()
 {
     //データがなかった場合終了する。
-    while (mIfs->eof())
+    while (mWritingRoopFlag)
     {
         //1ブロック分データ読込
         mIfs->read((char*)mData, NBb);
+
+        //データがなかった場合終了する。
+        if (mIfs->eof())
+        {
+            mWritingRoopFlag = false;
+            break;
+        }
 
         //一時保存用のブロックに暗号化されているブロックを格納
         memcpy(mDataTemp, mData, NBb);
@@ -115,14 +123,14 @@ void Decrypt::WritingDecryptData()
         //復号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
         for (int i = 0; i < NB; i++)
         {
-            mDecryptBlock[i] = mData[i] ^ mCipherBlockPre[i];
+            mDecryptBlock[i] = mData[i] ^ mEncryptBlockPre[i];
         }
 
         //復号した1ブロックを出力
         mOfs->write((char*)mDecryptBlock, NBb);
 
         //1つ前の暗号ブロックに一時保存したブロックを格納
-        memcpy(mCipherBlockPre, mDataTemp, NBb);
+        memcpy(mEncryptBlockPre, mDataTemp, NBb);
     }
 }
 
@@ -229,12 +237,16 @@ void Decrypt::InvMixColumns(int* _data)
     }
 }
 
+/**
+ * @fn ラウンド鍵とのXORをとる
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Decrypt::AddRoundKey(int* _data, int _n)
 {
     int i;
     for (i = 0; i < NB; i++)
     {
-        _data[i] ^= mWord[i + NB * _n];
+        _data[i] ^= mRoundKey[i + NB * _n];
     }
 }
 
@@ -271,14 +283,14 @@ void Decrypt::KeyExpansion(void* _key)
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
-    memcpy(mWord, _key, mKeyLength * 4);
+    memcpy(mRoundKey, _key, mKeyLength * 4);
     for (i = mKeyLength; i < NB * (mRound + 1); i++)
     {
-        temp = mWord[i - 1];
+        temp = mRoundKey[i - 1];
         if ((i % mKeyLength) == 0)
             temp = SubWord(RotWord(temp)) ^ Rcon[(i / mKeyLength) - 1];
         else if (mKeyLength > 6 && (i % mKeyLength) == 4)
             temp = SubWord(temp);
-        mWord[i] = mWord[i - mKeyLength] ^ temp;
+        mRoundKey[i] = mRoundKey[i - mKeyLength] ^ temp;
     }
 }

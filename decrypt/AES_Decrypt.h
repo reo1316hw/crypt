@@ -4,6 +4,7 @@
 
 using namespace std;
 
+//ワード数(1word = 4byte = 32bit)
 const int NB = 4;
 //128bit 固定として規格されている(データの長さ)
 const int NBb = 16;
@@ -26,21 +27,26 @@ public:
 
 private:
 
-	//4バイトのワードの線形配列
-	int mWord[32];
 	//4,6,8(128,192,256 bit) 鍵の長さ
 	int mKeyLength;
 	//10,12,14 ラウンド数 
 	int mRound;
+	//書き込み処理を行うか
+	bool mWritingRoopFlag;
 
-	//共通暗号鍵のデータをコピーする配列(コピーするときに鍵の長さを設定するため)
+	//共通鍵のデータをコピーする配列(コピーするときに鍵の長さを設定するため)
 	unsigned char mKey[32];
 
-	//共通暗号鍵
-	unsigned char mKeys[32] = { 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-				  0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-				  0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-				  0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f };
+	//共通鍵
+	unsigned char mKeys[32] = { 
+		0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+		0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+		0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+		0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f 
+	};
+
+	//ラウンド鍵
+	int mRoundKey[64];
 
 	//入力ファイルを読み込んだデータ
 	int mData[NB];
@@ -52,13 +58,13 @@ private:
 	int mDataTemp[NB];
 
 	//1つ前の暗号ブロック
-	int mCipherBlockPre[NB];
+	int mEncryptBlockPre[NB];
 
 	//復号ブロック
 	int mDecryptBlock[NB];
 
 	/////////////////////////////////////////////////////////////////////////////////
-	//ラインダールSボックス(代替ボックス)
+	//ラインダールSボックス(換字表)
 
 	//フォワードSボックス
 	int mSbox[256] = {
@@ -101,8 +107,9 @@ private:
 	};
 	///////////////////////////////////////////////////////////////////////////////////
 
-
+	//入力ファイルストリーム
 	ifstream* mIfs;
+	//出力ファイルストリーム
 	ofstream* mOfs;
 
 	/**
@@ -125,6 +132,11 @@ private:
 	void InvShiftRows(int* _data);
 	void InvSubBytes(int* _data);
 	void InvMixColumns(int* _data);
+
+	/**
+	 * @fn ラウンド鍵とのXORをとる
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	void AddRoundKey(int* _data, int _n);
 
 	int Mul(int _dt, int _n);
