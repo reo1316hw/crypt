@@ -1,17 +1,23 @@
 #include "AES_Decrypt.h"
 
+/**
+ * @fn コンストラクタ
+ * @param _inputFileName 入力ファイル名
+ * @param _outputFileName 出力ファイル名
+ */
 Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
 {
-    memcpy(key, keys, 16);
-    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    nr = nk + 6;          //ラウンド数 10,12,14
-
-    //復号するための鍵の準備
-    KeyExpansion(key);
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
     //書き込むための出力ファイルを生成
-    ofs = new ofstream(_outputFileName, ios::app | ios::binary);
+    mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
+
+    memcpy(mKey, mKeys, 16);
+    mKeyLength = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
+    mRound = mKeyLength + 6;      //ラウンド数 10,12,14
+
+    //復号するための鍵の準備
+    KeyExpansion(mKey);
 
     //入力ファイルが開かれたら書き込み処理を行う
     if (practicable)
@@ -21,6 +27,7 @@ Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
         //EOFまで復号したデータを書き込み
         WritingDecryptData();
     }
+    //入力ファイルが開けなかったら書き込み処理を行わない
     else
     {
         return;
@@ -29,10 +36,13 @@ Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
     practicable = false;
 }
 
+/**
+ * @fn デストラクタ
+ */
 Decrypt::~Decrypt()
 {
-    delete ifs;
-    delete ofs;
+    delete mIfs;
+    delete mOfs;
 }
 
 /**
@@ -43,12 +53,14 @@ Decrypt::~Decrypt()
 bool Decrypt::OpenInputFile(char* _inputFileName)
 {
     //ファイル名からバイナリファイルで読み込む
-    ifs = new ifstream(_inputFileName, ios::binary);
+    mIfs = new ifstream(_inputFileName, ios::binary);
 
-    if (ifs)
+    //ファイルが開けたらtrueを返す
+    if (mIfs)
     {
         return true;
     }
+    //ファイルが開けなかったらfalseを返す
     else
     {
         cout << "ファイルが開けませんでした" << endl;
@@ -61,25 +73,26 @@ bool Decrypt::OpenInputFile(char* _inputFileName)
  */
 void Decrypt::InitWritingDecryptData()
 {
-    memset(initialData, 'I', NBb);
+    //初期化ベクトルの中身を全て"I" = 0x49にする
+    memset(mInitialData, 'I', NBb);
 
-    //データ読込
-    ifs->read((char*)data, NBb);
+    //最初の1ブロックをデータ読込
+    mIfs->read((char*)mData, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
-    memcpy(cipherBlockPre, data, NBb);
+    memcpy(mCipherBlockPre, mData, NBb);
 
-    //復号
-    InvCipher(data);
+    //最初の1ブロックを復号
+    InvCipher(mData);
 
-    //ブロック長ごとに処理
+    //復号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
     for (int i = 0; i < NB; i++)
     {
-        decryptBlock[i] = data[i] ^ initialData[i];
+        mDecryptBlock[i] = mData[i] ^ mInitialData[i];
     }
 
-    //復号したブロックを出力
-    ofs->write((char*)decryptBlock, NBb);
+    //復号した最初の1ブロックを書き込み
+    mOfs->write((char*)mDecryptBlock, NBb);
 }
 
 /**
@@ -88,39 +101,43 @@ void Decrypt::InitWritingDecryptData()
 void Decrypt::WritingDecryptData()
 {
     //データがなかった場合終了する。
-    while (ifs->eof())
+    while (mIfs->eof())
     {
-        //データ読込
-        ifs->read((char*)data, NBb);
+        //1ブロック分データ読込
+        mIfs->read((char*)mData, NBb);
 
-        memcpy(dataTemp, data, NBb);
+        //一時保存用のブロックに暗号化されているブロックを格納
+        memcpy(mDataTemp, mData, NBb);
 
-        //復号
-        InvCipher(data);
+        //1ブロック分復号
+        InvCipher(mData);
 
-        //ブロック長ごとに処理
+        //復号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
         for (int i = 0; i < NB; i++)
         {
-            decryptBlock[i] = data[i] ^ cipherBlockPre[i];
+            mDecryptBlock[i] = mData[i] ^ mCipherBlockPre[i];
         }
 
-        //復号したブロックを出力
-        ofs->write((char*)decryptBlock, NBb);
+        //復号した1ブロックを出力
+        mOfs->write((char*)mDecryptBlock, NBb);
 
-        //1つ前の暗号ブロックに暗号化されているブロックを格納
-        memcpy(cipherBlockPre, dataTemp, NBb);
+        //1つ前の暗号ブロックに一時保存したブロックを格納
+        memcpy(mCipherBlockPre, mDataTemp, NBb);
     }
 }
 
 
-//復号化
+/**
+ * @fn AESによる復号
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 int Decrypt::InvCipher(int* _data)
 {
     int i;
 
-    AddRoundKey(_data, nr);
+    AddRoundKey(_data, mRound);
 
-    for (i = nr - 1; i > 0; i--)
+    for (i = mRound - 1; i > 0; i--)
     {
         InvShiftRows(_data);
         InvSubBytes(_data);
@@ -131,7 +148,7 @@ int Decrypt::InvCipher(int* _data)
     InvShiftRows(_data);
     InvSubBytes(_data);
     AddRoundKey(_data, 0);
-    return(nr);
+    return(mRound);
 }
 
 void Decrypt::InvSubBytes(int* _data)
@@ -142,7 +159,7 @@ void Decrypt::InvSubBytes(int* _data)
     {
         for (j = 0; j < 4; j++)
         {
-            cb[i + j] = invSbox[cb[i + j]];
+            cb[i + j] = mInvSbox[cb[i + j]];
         }
     }
 }
@@ -212,14 +229,12 @@ void Decrypt::InvMixColumns(int* _data)
     }
 }
 
-/************************************************************/
-/* FIPS 197  P.19 Figure 10 */
 void Decrypt::AddRoundKey(int* _data, int _n)
 {
     int i;
     for (i = 0; i < NB; i++)
     {
-        _data[i] ^= w[i + NB * _n];
+        _data[i] ^= mWord[i + NB * _n];
     }
 }
 
@@ -227,15 +242,13 @@ int Decrypt::SubWord(int _in)
 {
     int inw = _in;
     unsigned char* cin = (unsigned char*)&inw;
-    cin[0] = Sbox[cin[0]];
-    cin[1] = Sbox[cin[1]];
-    cin[2] = Sbox[cin[2]];
-    cin[3] = Sbox[cin[3]];
+    cin[0] = mSbox[cin[0]];
+    cin[1] = mSbox[cin[1]];
+    cin[2] = mSbox[cin[2]];
+    cin[3] = mSbox[cin[3]];
     return(inw);
 }
 
-/************************************************************/
-/* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
 int Decrypt::RotWord(int _in)
 {
     int inw = _in, inw2 = 0;
@@ -248,20 +261,24 @@ int Decrypt::RotWord(int _in)
     return(inw2);
 }
 
+/**
+ * @fn 復号するための鍵の準備
+ * @param _key 共通鍵
+ */
 void Decrypt::KeyExpansion(void* _key)
 {
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
-    memcpy(w, _key, nk * 4);
-    for (i = nk; i < NB * (nr + 1); i++)
+    memcpy(mWord, _key, mKeyLength * 4);
+    for (i = mKeyLength; i < NB * (mRound + 1); i++)
     {
-        temp = w[i - 1];
-        if ((i % nk) == 0)
-            temp = SubWord(RotWord(temp)) ^ Rcon[(i / nk) - 1];
-        else if (nk > 6 && (i % nk) == 4)
+        temp = mWord[i - 1];
+        if ((i % mKeyLength) == 0)
+            temp = SubWord(RotWord(temp)) ^ Rcon[(i / mKeyLength) - 1];
+        else if (mKeyLength > 6 && (i % mKeyLength) == 4)
             temp = SubWord(temp);
-        w[i] = w[i - nk] ^ temp;
+        mWord[i] = mWord[i - mKeyLength] ^ temp;
     }
 }

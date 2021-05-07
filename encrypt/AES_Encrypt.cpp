@@ -2,17 +2,19 @@
 
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 {
+    //入力ファイルを開く処理
+    bool practicable = OpenInputFile(_inputFileName);
+    //書き込むための出力ファイルを生成
+    ofs = new ofstream(_outputFileName, ios::app | ios::binary);
+
     memcpy(key, keys, 16);
     nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
     nr = nk + 6;          //ラウンド数 10,12,14
 
     //暗号化するための鍵の準備
     KeyExpansion(key);
-    //入力ファイルを開く処理
-    bool practicable = OpenInputFile(_inputFileName);
-    //書き込むための出力ファイルを生成
-    ofs = new ofstream(_outputFileName, ios::app | ios::binary);
 
+    //入力ファイルが開かれたら書き込み処理を行う
     if (practicable)
     {
         //初回の1ブロック分の暗号化データを書き込み
@@ -20,6 +22,7 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
         //EOFまで暗号化したデータを書き込み
         WritingEncryptData();
     }
+    //入力ファイルが開けなかったら書き込み処理を行わない
     else
     {
         return;
@@ -44,10 +47,12 @@ bool Encrypt::OpenInputFile(char* _inputFileName)
     //ファイル名からバイナリファイルで読み込む
     ifs = new ifstream(_inputFileName, ios::binary);
 
+    //ファイルが開けたらtrueを返す
     if (ifs)
     {
         return true;
     }
+    //ファイルが開けなかったらfalseを返す
     else
     {
         cout << "ファイルが開けませんでした" << endl;
@@ -57,21 +62,22 @@ bool Encrypt::OpenInputFile(char* _inputFileName)
 
 void Encrypt::InitWritingEncryptData()
 {
+    //初期化ベクトルの中身を全て"I" = 0x49にする
     memset(initialData, 'I', NBb);
 
-    //データ読込
+    //最初の1ブロックをデータ読込
     ifs->read((char*)data, NBb);
 
-    //ブロック長ごとに処理
+    //暗号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
     for (int i = 0; i < NB; i++)
     {
         encryptBlock[i] = data[i] ^ initialData[i];
     }
 
-    //暗号化
+    //最初の1ブロックを暗号化
     Cipher(encryptBlock);
 
-    //暗号化したブロックを出力
+    //暗号化した最初の1ブロックを書き込み
     ofs->write((char*)encryptBlock, NBb);
 
     //1つ前の暗号ブロックに暗号化されているブロックを格納
@@ -80,28 +86,28 @@ void Encrypt::InitWritingEncryptData()
 
 void Encrypt::WritingEncryptData()
 {
-    do {
-        //データ読込
+    //データがなかった場合終了する。
+    while (ifs->eof())
+    {
+        //1ブロック分データ読込
         ifs->read((char*)data, NBb);
 
-        //データがなかった場合終了する。
-        if (ifs->eof()) break;
         //ブロック長ごとに処理
+        //暗号ブロックに読み込んだデータをnバイト分XORして代入(n = バイト数)
         for (int i = 0; i < NB; i++)
         {
             encryptBlock[i] = data[i] ^ cipherBlockPre[i];
         }
 
-        //暗号化
+        //1ブロック分暗号化
         Cipher(encryptBlock);
 
-        //暗号化したブロックを出力
+        //暗号化した1ブロックを書き込み
         ofs->write((char*)encryptBlock, NBb);
 
         //1つ前の暗号ブロックに暗号化されているブロックを格納
         memcpy(cipherBlockPre, encryptBlock, NBb);
-
-    } while (true);
+    }
 }
 
 //暗号化
@@ -239,10 +245,6 @@ int Encrypt::RotWord(int _in)
 
 void Encrypt::KeyExpansion(void* _key)
 {
-    memcpy(key, keys, 16);
-    nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    nr = nk + 6;          //ラウンド数 10,12,14
-
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は Mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
