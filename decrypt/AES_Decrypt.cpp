@@ -137,7 +137,6 @@ void Decrypt::WritingDecryptData()
     }
 }
 
-
 /**
  * @fn AESによる復号
  * @param _data 入力ファイルを読み込んだデータ
@@ -162,6 +161,10 @@ int Decrypt::InvCipher(int* _data)
     return(mRound);
 }
 
+/**
+ * @fn 各マスに分けられた1byte長のマスの内部で換字表(インバースSボックス)を用いてbit置換を行う
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Decrypt::InvSubBytes(int* _data)
 {
     int i, j;
@@ -175,6 +178,11 @@ void Decrypt::InvSubBytes(int* _data)
     }
 }
 
+/**
+ * @fn 4バイト単位の行を一定規則で右シフトする
+ * @brief 4×4マスの1行目は右シフトせず、2行目は1右シフト、3行目は2右シフト、4行目は3右シフトする
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Decrypt::InvShiftRows(int* _data)
 {
     int i, j, i4;
@@ -214,6 +222,10 @@ int Decrypt::Dataget(void* _data, int _n)
     return(((unsigned char*)_data)[_n]);
 }
 
+/**
+ * @fn ビット演算による４バイト単位の行列変換
+ * @param _data 入力ファイルを読み込んだデータ
+ */
 void Decrypt::InvMixColumns(int* _data)
 {
     int i, i4, x;
@@ -253,6 +265,10 @@ void Decrypt::AddRoundKey(int* _data, int _n)
     }
 }
 
+/**
+ * @fn Sboxによるbyte単位の置換
+ * @param _in 回転処理した共通鍵
+ */
 int Decrypt::SubWord(int _in)
 {
     int inw = _in;
@@ -264,6 +280,10 @@ int Decrypt::SubWord(int _in)
     return(inw);
 }
 
+/**
+ * @fn 1wordをbyte単位で左に回転する
+ * @param _in 共通鍵のn番目
+ */
 int Decrypt::RotWord(int _in)
 {
     int inw = _in, inw2 = 0;

@@ -158,7 +158,7 @@ int Encrypt::Cipher(int* _data)
 }
 
 /**
- * @fn 各マスに分けられた1byte長のマスの内部で換字表を用いてbit置換を行う
+ * @fn 各マスに分けられた1byte長のマスの内部で換字表(フォワードSボックス)を用いてbit置換を行う
  * @param _data 入力ファイルを読み込んだデータ
  */
 void Encrypt::SubBytes(int* _data)
@@ -264,6 +264,10 @@ void Encrypt::AddRoundKey(int* _data, int _roundCount)
     }
 }
 
+/**
+ * @fn Sboxによるbyte単位の置換
+ * @param _in 回転処理した共通鍵
+ */
 int Encrypt::SubWord(int _in)
 {
     int inw = _in;
@@ -275,6 +279,10 @@ int Encrypt::SubWord(int _in)
     return(inw);
 }
 
+/**
+ * @fn 1wordをbyte単位で左に回転する
+ * @param _in 共通鍵のn番目
+ */
 int Encrypt::RotWord(int _in)
 {
     int inw = _in, inw2 = 0;

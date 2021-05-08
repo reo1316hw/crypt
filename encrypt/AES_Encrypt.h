@@ -106,7 +106,7 @@ private:
 	void WritingEncryptData();
 
 	/**
-	 * @fn 各マスに分けられた1byte長のマスの内部で換字表を用いてbit置換を行う
+	 * @fn 各マスに分けられた1byte長のマスの内部で換字表(フォワードSボックス)を用いてbit置換を行う
 	 * @param _data 入力ファイルを読み込んだデータ
 	 */
 	void SubBytes(int* _data);
@@ -132,8 +132,19 @@ private:
 	void AddRoundKey(int* _data, int _roundCount);
 
 	int Mul(int _dt, int _n);
+
 	int Dataget(void* _data, int _n);
+
+	/**
+	 * @fn Sboxによるbyte単位の置換
+	 * @param _in 回転処理した共通鍵
+	 */
 	int SubWord(int _in);
+
+	/**
+	 * @fn 1wordをbyte単位で左に回転する
+	 * @param _in 共通鍵のn番目
+	 */
 	int RotWord(int _in);
 
 	/**
