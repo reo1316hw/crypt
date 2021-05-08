@@ -6,16 +6,19 @@
  * @param _outputFileName 出力ファイル名
  */
 Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
-    : mWritingRoopFlag(true)
+    : mKeyLength(8)             //鍵の長さ 4,6,8(128,192,256 bit)
+    , mRound(mKeyLength + 6)    //ラウンド数 10,12,14
+    , mWritingRoopFlag(true)
+    , mIfs(nullptr)
+    , mOfs(nullptr)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
     //書き込むための出力ファイルを生成
     mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
 
-    memcpy(mKey, mKeys, 16);
-    mKeyLength = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    mRound = mKeyLength + 6;      //ラウンド数 10,12,14
+    //共通鍵の長さを指定してコピー
+    memcpy(mKey, mKeys, mKeyLength * 4);
 
     //復号するための鍵の準備
     KeyExpansion(mKey);
@@ -74,8 +77,8 @@ bool Decrypt::OpenInputFile(char* _inputFileName)
  */
 void Decrypt::InitWritingDecryptData()
 {
-    //初期化ベクトルの中身を全て"I" = 0x49にする
-    memset(mInitialData, 'I', NBb);
+    //初期化ベクトルの中身を全て"R" = 0x52にする
+    memset(mInitialData, 'R', NBb);
 
     //最初の1ブロックをデータ読込
     mIfs->read((char*)mData, NBb);

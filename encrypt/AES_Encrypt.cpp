@@ -6,16 +6,18 @@
  * @param _outputFileName 出力ファイル名
  */
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
-    : mWritingRoopFlag(true)
+    : mKeyLength(8)             //鍵の長さ 4,6,8(128,192,256 bit)
+    , mRound(mKeyLength + 6)    //ラウンド数 10,12,14
+    , mWritingRoopFlag(true)
+    , mIfs(nullptr)
+    , mOfs(nullptr)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
     //書き込むための出力ファイルを生成
     mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
 
-    memcpy(mKey, mKeys, 16);
-    mKeyLength = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
-    mRound = mKeyLength + 6;          //ラウンド数 10,12,14
+    memcpy(mKey, mKeys, mKeyLength * 4);
 
     //暗号化するための鍵の準備
     KeyExpansion(mKey);
@@ -74,8 +76,8 @@ bool Encrypt::OpenInputFile(char* _inputFileName)
  */
 void Encrypt::InitWritingEncryptData()
 {
-    //初期化ベクトルの中身を全て"I" = 0x49にする
-    memset(mInitialData, 'I', NBb);
+    //初期化ベクトルの中身を全て"R" = 0x52にする
+    memset(mInitialData, 'R', NBb);
 
     //最初の1ブロックをデータ読込
     mIfs->read((char*)mData, NBb);
@@ -251,14 +253,14 @@ void Encrypt::MixColumns(int* _data)
 /**
  * @fn ラウンド鍵とのXORをとる
  * @param _data 入力ファイルを読み込んだデータ
- * @param _n 
+ * @param _roundCount ラウンド数
  */
-void Encrypt::AddRoundKey(int* _data, int _n)
+void Encrypt::AddRoundKey(int* _data, int _roundCount)
 {
     int i;
     for (i = 0; i < NB; i++)
     {
-        _data[i] ^= mRoundKey[i + NB * _n];
+        _data[i] ^= mRoundKey[i + NB * _roundCount];
     }
 }
 

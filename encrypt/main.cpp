@@ -1,11 +1,41 @@
 #include "AES_Encrypt.h"
-#include <iostream>
+
+bool ErrorHandling(int argc, char* argv[])
+{
+    string commandLine1 = "-i";
+    string commandLine3 = "-o";
+
+    if (argc <= 1)
+    {
+        cout << "コマンドライン引数がありません" << endl;
+        return true;
+    }
+
+    if (argc >= 6)
+    {
+        cout << "コマンドライン引数が多すぎます" << endl;
+        return true;
+    }
+
+    if (argv[1] != commandLine1)
+    {
+        cout << "1番目のコマンドライン引数は'-i'で指定してください" << endl;
+        return true;
+    }
+
+    if (argv[3] != commandLine3)
+    {
+        cout << "3番目のコマンドライン引数は'-o'で指定してください" << endl;
+        return true;
+    }
+
+    return false;
+}
 
 int main(int argc, char* argv[])
 {
-    if (argc <= 1)
+    if (ErrorHandling(argc, argv))
     {
-        cout << "ないよ" << endl;
         return 0;
     }
 

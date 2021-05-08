@@ -31,6 +31,8 @@ private:
 	int mKeyLength;
 	//10,12,14 ラウンド数
 	int mRound;
+	// ラウンドカウント
+	int mRoundCount;
 	//書き込み処理を行うか
 	bool mWritingRoopFlag;
 
@@ -125,9 +127,9 @@ private:
 	/**
 	 * @fn ラウンド鍵とのXORをとる
 	 * @param _data 入力ファイルを読み込んだデータ
-	 * @param _n 
+	 * @param _roundCount ラウンド数
 	 */
-	void AddRoundKey(int* _data, int _n);
+	void AddRoundKey(int* _data, int _roundCount);
 
 	int Mul(int _dt, int _n);
 	int Dataget(void* _data, int _n);
@@ -145,5 +147,4 @@ private:
 	 * @param _data 入力ファイルを読み込んだデータ
 	 */
 	int Cipher(int* _data);
-
 };
