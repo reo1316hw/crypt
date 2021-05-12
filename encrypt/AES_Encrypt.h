@@ -1,4 +1,5 @@
 #pragma once
+
 #include <fstream>
 #include <iostream>
 
@@ -27,14 +28,12 @@ public:
 
 private:
 
-	//4,6,8(128,192,256 bit) 鍵の長さ
+	//4,6,8(128,192,256 bit) 共通鍵の長さ
 	int mKeyLength;
 	//10,12,14 ラウンド数
 	int mRound;
 	// ラウンドカウント
 	int mRoundCount;
-	//書き込み処理を行うか
-	bool mWritingRoopFlag;
 
 	//共通鍵のデータをコピーする配列(コピーするときに鍵の長さを設定するため)
 	unsigned char mKey[32];

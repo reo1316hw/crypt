@@ -8,7 +8,6 @@
 Encrypt::Encrypt(char* _inputFileName, char* _outputFileName, int _keyLength)
     : mKeyLength(_keyLength)             //鍵の長さ 4,6,8(128,192,256 bit)
     , mRound(mKeyLength + 6)    //ラウンド数 10,12,14
-    , mWritingRoopFlag(true)
     , mIfs(nullptr)
     , mOfs(nullptr)
 {
@@ -114,7 +113,7 @@ void Encrypt::InitWritingEncryptData()
  */
 void Encrypt::WritingEncryptData()
 {
-    while (mWritingRoopFlag)
+    while (true)
     {
         //1ブロック分データ読込
         mIfs->read((char*)mData, NBb);
@@ -122,7 +121,6 @@ void Encrypt::WritingEncryptData()
         //データがなかった場合終了する。
         if (mIfs->eof())
         {
-            mWritingRoopFlag = false;
             break;
         }
 

@@ -1,8 +1,8 @@
-#include "Encrypt.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <iomanip>
+#include "Encrypt.h"
 
 using namespace std;
 
