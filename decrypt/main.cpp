@@ -5,7 +5,7 @@ bool ErrorHandling(int argc, char* argv[])
     string commandLine1 = "-i";
     string commandLine3 = "-o";
 
-    if (argc <= 1)
+   /* if (argc <= 1)
     {
         cout << "コマンドライン引数がありません" << endl;
         return true;
@@ -27,7 +27,7 @@ bool ErrorHandling(int argc, char* argv[])
     {
         cout << "3番目のコマンドライン引数は'-o'で指定してください" << endl;
         return true;
-    }
+    }*/
 
     return false;
 }
@@ -39,7 +39,11 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    Decrypt decrypt(argv[2], argv[4]);
+    int keyLength;
+    cout << "共通鍵の長さを指定してください(4、6、8のいずれかを入力してください)" << endl;
+    cin >> keyLength;
+
+    Decrypt decrypt(argv[2], argv[4], keyLength);
 
     return 0;
 }

@@ -5,8 +5,8 @@
  * @param _inputFileName 入力ファイル名
  * @param _outputFileName 出力ファイル名
  */
-Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
-    : mKeyLength(8)             //鍵の長さ 4,6,8(128,192,256 bit)
+Decrypt::Decrypt(char* _inputFileName, char* _outputFileName, int _keyLength)
+    : mKeyLength(_keyLength)             //鍵の長さ 4,6,8(128,192,256 bit)
     , mRound(mKeyLength + 6)    //ラウンド数 10,12,14
     , mWritingRoopFlag(true)
     , mIfs(nullptr)
@@ -14,8 +14,11 @@ Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
+
+    string s = "aaa.png";
+
     //書き込むための出力ファイルを生成
-    mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
+    mOfs = new ofstream(s, ios::app | ios::binary);
 
     //共通鍵の長さを指定してコピー
     memcpy(mKey, mKeys, mKeyLength * 4);
@@ -30,10 +33,13 @@ Decrypt::Decrypt(char* _inputFileName, char* _outputFileName)
         InitWritingDecryptData();
         //EOFまで復号したデータを書き込み
         WritingDecryptData();
+
+        cout << "復号成功" << endl;
     }
     //入力ファイルが開けなかったら書き込み処理を行わない
     else
     {
+        cout << "復号失敗" << endl;
         return;
     }
 
@@ -56,20 +62,24 @@ Decrypt::~Decrypt()
  */
 bool Decrypt::OpenInputFile(char* _inputFileName)
 {
-    //ファイル名からバイナリファイルで読み込む
-    mIfs = new ifstream(_inputFileName, ios::binary);
+    string s = "a.png";
 
-    //ファイルが開けたらtrueを返す
-    if (mIfs)
-    {
-        return true;
-    }
+    //ファイル名からバイナリファイルで読み込む
+    mIfs = new ifstream(s, ios::binary);
+
+    //ファイルが存在するかチェック
+    bool fileCheck = mIfs->is_open();
+
     //ファイルが開けなかったらfalseを返す
-    else
+    if (!fileCheck)
     {
-        cout << "ファイルが開けませんでした" << endl;
+        cout << "入力ファイルが開けませんでした" << endl;
         return false;
     }
+
+    //ファイルが開けたらtrueを返す
+    cout << "入力ファイルを開けました" << endl;
+    return true;
 }
 
 /**
@@ -302,7 +312,6 @@ int Decrypt::RotWord(int _in)
  */
 void Decrypt::KeyExpansion(void* _key)
 {
-    /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 

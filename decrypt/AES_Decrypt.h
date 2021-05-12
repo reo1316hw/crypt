@@ -18,7 +18,7 @@ public:
 	 * @param _inputFileName 入力ファイル名
 	 * @param _outputFileName 出力ファイル名
 	 */
-	Decrypt(char* _iputFileName, char* _outputFileName);
+	Decrypt(char* _iputFileName, char* _outputFileName, int _keyLength);
 
 	/**
 	 * @fn デストラクタ
@@ -46,7 +46,7 @@ private:
 	};
 
 	//ラウンド鍵
-	int mRoundKey[64];
+	int mRoundKey[60];
 
 	//入力ファイルを読み込んだデータ
 	int mData[NB];
@@ -135,9 +135,17 @@ private:
 	 */
 	void InvSubBytes(int* _data);
 
-
+	/**
+	 * @fn 4バイト単位の行を一定規則で右シフトする
+	 * @brief 4×4マスの1行目は右シフトせず、2行目は1右シフト、3行目は2右シフト、4行目は3右シフトする
+	 * @param _data 入力ファイルを読み込んだデータ
+	 */
 	void InvShiftRows(int* _data);
 
+	/**
+	  * @fn ビット演算による４バイト単位の行列変換
+	  * @param _data 入力ファイルを読み込んだデータ
+	  */
 	void InvMixColumns(int* _data);
 
 	/**

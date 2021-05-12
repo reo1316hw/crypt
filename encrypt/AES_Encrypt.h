@@ -18,7 +18,7 @@ public:
 	 * @param _inputFileName 入力ファイル名
 	 * @param _outputFileName 出力ファイル名
 	 */
-	Encrypt(char* _inputFileName, char* _outputFileName);
+	Encrypt(char* _inputFileName, char* _outputFileName, int _keyLength);
 
 	/**
 	 * @fn デストラクタ
@@ -48,7 +48,7 @@ private:
 	};
 
 	//ラウンド鍵
-	int mRoundKey[64];
+	int mRoundKey[60];
 
 	//入力ファイルを読み込んだデータ
 	int mData[NB];
@@ -131,8 +131,18 @@ private:
 	 */
 	void AddRoundKey(int* _data, int _roundCount);
 
+	/**
+	  * @fn 掛け算
+	  * @param _dt 1バイトのバイナリデータ
+	  * @param _n 掛け算する対象の配列の添え字
+	  */
 	int Mul(int _dt, int _n);
 
+	/**
+	  * @fn unsigned char型に変換
+	  * @param _data 入力ファイルを読み込んだデータ
+	  * @param _n 入力ファイルのデータ配列の添え字
+	  */
 	int Dataget(void* _data, int _n);
 
 	/**

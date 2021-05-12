@@ -5,8 +5,8 @@
  * @param _inputFileName 入力ファイル名
  * @param _outputFileName 出力ファイル名
  */
-Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
-    : mKeyLength(8)             //鍵の長さ 4,6,8(128,192,256 bit)
+Encrypt::Encrypt(char* _inputFileName, char* _outputFileName, int _keyLength)
+    : mKeyLength(_keyLength)             //鍵の長さ 4,6,8(128,192,256 bit)
     , mRound(mKeyLength + 6)    //ラウンド数 10,12,14
     , mWritingRoopFlag(true)
     , mIfs(nullptr)
@@ -14,9 +14,13 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
 {
     //入力ファイルを開く処理
     bool practicable = OpenInputFile(_inputFileName);
-    //書き込むための出力ファイルを生成
-    mOfs = new ofstream(_outputFileName, ios::app | ios::binary);
 
+    string s = "a.png";
+
+    //書き込むための出力ファイルを生成
+    mOfs = new ofstream(s, ios::app | ios::binary);
+
+    //共通鍵の長さを指定してコピー
     memcpy(mKey, mKeys, mKeyLength * 4);
 
     //暗号化するための鍵の準備
@@ -29,10 +33,13 @@ Encrypt::Encrypt(char* _inputFileName, char* _outputFileName)
         InitWritingEncryptData();
         //EOFまで暗号化したデータを書き込み
         WritingEncryptData();
+
+        cout << "暗号化成功" << endl;
     }
     //入力ファイルが開けなかったら書き込み処理を行わない
     else
     {
+        cout << "暗号化失敗" << endl;
         return;
     }
 
@@ -55,20 +62,24 @@ Encrypt::~Encrypt()
  */
 bool Encrypt::OpenInputFile(char* _inputFileName)
 {
-    //ファイル名からバイナリファイルで読み込む
-    mIfs = new ifstream(_inputFileName, ios::binary);
+    string s = "heart.png";
 
-    //ファイルが開けたらtrueを返す
-    if (mIfs)
-    {
-        return true;
-    }
+    //ファイル名からバイナリファイルで読み込む
+    mIfs = new ifstream(s, ios::binary);
+
+    //ファイルが存在するかチェック
+    bool fileCheck = mIfs->is_open();
+
     //ファイルが開けなかったらfalseを返す
-    else
+    if (!fileCheck)
     {
-        cout << "ファイルが開けませんでした" << endl;
+        cout << "入力ファイルが開けませんでした" << endl;
         return false;
     }
+
+    //ファイルが開けたらtrueを返す
+    cout << "入力ファイルを開けました" << endl;
+    return true;
 }
 
 /**
@@ -154,7 +165,8 @@ int Encrypt::Cipher(int* _data)
     SubBytes(_data);
     ShiftRows(_data);
     AddRoundKey(_data, i);
-    return(i);
+
+    return i;
 }
 
 /**
@@ -165,7 +177,8 @@ void Encrypt::SubBytes(int* _data)
 {
     int i, j;
     unsigned char* cb = (unsigned char*)_data;
-    for (i = 0; i < NBb; i += 4)//理論的な意味から二重ループにしているが意味は無い
+
+    for (i = 0; i < NBb; i += 4)
     {
         for (j = 0; j < 4; j++)
         {
@@ -184,10 +197,13 @@ void Encrypt::ShiftRows(int* _data)
     int i, j, i4;
     unsigned char* cb = (unsigned char*)_data;
     unsigned char cw[NBb];
+
     memcpy(cw, cb, sizeof(cw));
+
     for (i = 0; i < NB; i += 4)
     {
         i4 = i * 4;
+
         for (j = 1; j < 4; j++)
         {
             cw[i4 + j + 0 * 4] = cb[i4 + j + ((j + 0) & 3) * 4];
@@ -200,24 +216,40 @@ void Encrypt::ShiftRows(int* _data)
     memcpy(cb, cw, sizeof(cw));
 }
 
-//乗算 (n倍) 
+/**
+ * @fn 掛け算
+ * @param _dt 1バイトのバイナリデータ
+ * @param _n 掛け算する対象の配列の添え字
+ */
 int Encrypt::Mul(int _dt, int _n)
 {
     int i, x = 0;
+
     for (i = 8; i > 0; i >>= 1)
     {
         x <<= 1;
+
         if (x & 0x100)
+        {
             x = (x ^ 0x1b) & 0xff;
-        if ((_n & i))
+        }  
+        if (_n & i)
+        {
             x ^= _dt;
+        }
     }
-    return(x);
+
+    return x;
 }
 
+/**
+ * @fn unsigned char型に変換
+ * @param _data 入力ファイルを読み込んだデータ
+ * @param _n 入力ファイルのデータ配列の添え字
+ */
 int Encrypt::Dataget(void* _data, int _n)
 {
-    return(((unsigned char*)_data)[_n]);
+    return ((unsigned char*)_data)[_n];
 }
 
 /**
@@ -227,25 +259,31 @@ int Encrypt::Dataget(void* _data, int _n)
 void Encrypt::MixColumns(int* _data)
 {
     int i, i4, x;
+
     for (i = 0; i < NB; i++)
     {
         i4 = i * 4;
+
         x = Mul(Dataget(_data, i4 + 0), 2) ^
             Mul(Dataget(_data, i4 + 1), 3) ^
             Mul(Dataget(_data, i4 + 2), 1) ^
             Mul(Dataget(_data, i4 + 3), 1);
+
         x |= (Mul(Dataget(_data, i4 + 1), 2) ^
             Mul(Dataget(_data, i4 + 2), 3) ^
             Mul(Dataget(_data, i4 + 3), 1) ^
             Mul(Dataget(_data, i4 + 0), 1)) << 8;
+
         x |= (Mul(Dataget(_data, i4 + 2), 2) ^
             Mul(Dataget(_data, i4 + 3), 3) ^
             Mul(Dataget(_data, i4 + 0), 1) ^
             Mul(Dataget(_data, i4 + 1), 1)) << 16;
+
         x |= (Mul(Dataget(_data, i4 + 3), 2) ^
             Mul(Dataget(_data, i4 + 0), 3) ^
             Mul(Dataget(_data, i4 + 1), 1) ^
             Mul(Dataget(_data, i4 + 2), 1)) << 24;
+
         _data[i] = x;
     }
 }
@@ -258,6 +296,7 @@ void Encrypt::MixColumns(int* _data)
 void Encrypt::AddRoundKey(int* _data, int _roundCount)
 {
     int i;
+
     for (i = 0; i < NB; i++)
     {
         _data[i] ^= mRoundKey[i + NB * _roundCount];
@@ -272,11 +311,13 @@ int Encrypt::SubWord(int _in)
 {
     int inw = _in;
     unsigned char* cin = (unsigned char*)&inw;
+
     cin[0] = mSbox[cin[0]];
     cin[1] = mSbox[cin[1]];
     cin[2] = mSbox[cin[2]];
     cin[3] = mSbox[cin[3]];
-    return(inw);
+
+    return inw;
 }
 
 /**
@@ -288,11 +329,13 @@ int Encrypt::RotWord(int _in)
     int inw = _in, inw2 = 0;
     unsigned char* cin = (unsigned char*)&inw;
     unsigned char* cin2 = (unsigned char*)&inw2;
+
     cin2[0] = cin[1];
     cin2[1] = cin[2];
     cin2[2] = cin[3];
     cin2[3] = cin[0];
-    return(inw2);
+
+    return inw2;
 }
 
 /**
@@ -301,18 +344,24 @@ int Encrypt::RotWord(int _in)
  */
 void Encrypt::KeyExpansion(void* _key)
 {
-    /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は Mulを使用する
     int Rcon[10] = { 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36 };
     int i, temp;
 
     memcpy(mRoundKey, _key, mKeyLength * 4);
+
     for (i = mKeyLength; i < NB * (mRound + 1); i++)
     {
         temp = mRoundKey[i - 1];
+
         if ((i % mKeyLength) == 0)
+        {
             temp = SubWord(RotWord(temp)) ^ Rcon[(i / mKeyLength) - 1];
+        }
         else if (mKeyLength > 6 && (i % mKeyLength) == 4)
+        {
             temp = SubWord(temp);
+        }
+            
         mRoundKey[i] = mRoundKey[i - mKeyLength] ^ temp;
     }
 }
